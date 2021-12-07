@@ -1,7 +1,10 @@
-from PySide6.QtWidgets import QVBoxLayout, QFrame, QWidget, QPushButton, QLabel
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtWidgets import ( 
+  QVBoxLayout, QFrame, QWidget, QPushButton, QLabel, QFileDialog,
+)
+from PySide6.QtCore import QSize, Qt, QDir, QObject
 
 from bs_ui.components.Graph import Canvas 
+from bs_ui.devices.simulator import simulator
 
 class DisplayPanel(QFrame):
   def __init__(self, parent):
@@ -23,10 +26,29 @@ class DisplayPanel(QFrame):
 
     graph = Canvas(self)
     graph.setFixedHeight(250)
-    # graph.fig.axes.plot([0,1,2,3,4], [10,1,20,3,40])
+    simulator.on_flow_callback = graph.update_data
+    simulator.add_simulation_start_callback(graph.clear_data)
+    self.graph = graph
 
     self.layout.addWidget(label)
     self.layout.addWidget(graph)
 
     self.button = QPushButton("Export")
+    self.button.clicked.connect(self.export)
+
     self.layout.addWidget(self.button)
+
+  def export(self):
+    (file_name, _) = QFileDialog.getSaveFileName(caption="Save CSV")
+    # TODO: better handling here
+    if file_name == "": return
+    print(file_name)
+
+    if file_name.endswith(".csv") == False:
+      file_name = f'{file_name}.csv'
+
+    (xdata, ydata) = self.graph.get_data()
+    with open(file_name, 'w') as f:
+      f.write("time(ms),flow(l/min)\n")
+      for (x, y) in zip(xdata, ydata):
+        f.write(f'{x},{y}\n')
