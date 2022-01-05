@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-device = serial.Serial('/dev/cu.usbmodem91791901')
+device = serial.Serial('/dev/tty.usbmodem111401', 115200)
 
 fig, ax = plt.subplots()
 xdata, ydata = [], []
@@ -32,6 +32,7 @@ def listen():
   while True:
     line = device.readline()
     msg = line.rstrip().decode('utf-8')
+    print(msg)
     if msg[0] == 'f':
       [ts, flow] = msg[2:].split(',')
       # print(flow)

@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QIntValidator
 import os
 
-from bs_ui.devices.simulator import simulator
+from simuflow.devices.simulator import simulator, Callback
 
 class ControlPanel(QFrame):
   def __init__(self, parent):
@@ -27,8 +27,8 @@ class ControlPanel(QFrame):
     start = QPushButton("Start")
     start.setEnabled(False)
     start.clicked.connect(self.start_simulation)
-    simulator.simulation_ready_callback = self.simulation_ready
-    simulator.simulation_not_ready_callback = self.simulation_not_ready
+
+    simulator.register(Callback.ON_SIMULATION_READY, self.simulation_ready)
     self.start = start
     # start.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
 
@@ -46,11 +46,8 @@ class ControlPanel(QFrame):
     self.layout.addWidget(configuration_view)
     self.layout.addWidget(start)
 
-  def simulation_ready(self):
-    self.start.setEnabled(True)
-
-  def simulation_not_ready(self):
-    self.start.setEnabled(False)
+  def simulation_ready(self, ready):
+    self.start.setEnabled(ready)
 
   def start_simulation(self):
     simulator.start_simulation()
@@ -120,11 +117,14 @@ class HarwareSetupPanel(QFrame):
     self.layout.addWidget(connect)
     self.layout.addWidget(self.connection_status)
     self.layout.addWidget(self.connection_error)
+
+    simulator.register(Callback.ON_CONNECTION_FAILURE, self.on_connection_failure)
+    simulator.register(Callback.ON_CONNECTION_SUCCESS, self.on_connection_success)
     # self.layout.setContentsMargins(0,0,0,0)
     # self.layout.setSpacing(0)
 
   def attempt_connection(self):
-    simulator.connect(self.input.currentText(), self.on_connection_failure, self.on_connection_success)
+    simulator.connect(self.input.currentText())
 
   def on_connection_success(self):
     self.connection_status.setText("Connected")

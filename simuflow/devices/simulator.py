@@ -1,10 +1,9 @@
 from enum import Enum, auto
 import threading
 import json
-import socket
 import time
 import serial
-from dataclasses import dataclass
+from simuflow.configuration import * 
 
 class ConnectionStatus(Enum):
   CONNECTED = auto()
@@ -15,13 +14,16 @@ class ProcessingStatus(Enum):
   WAITING_FOR_HEARTBEAT = auto()
   WAITING_FOR_FLOW = auto()
 
-@dataclass
-class Configuration():
-  simulator_version: str = 'unknown'
-  ui_version: str = '0.1.0'
-  delay: int = 0
-  flow: float = 0.0
-  duration: int = 0
+class Callback(Enum):
+  ON_METADATA_UPDATE = auto()
+  ON_CONNECTION_SUCCESS = auto()
+  ON_CONNECTION_FAILURE = auto()
+  ON_FLOW_DATA = auto()
+  ON_SIMULATION_READY = auto()
+  ON_SIMULATION_START = auto()
+  ON_MANUAL_FLOW_UPDATE = auto()
+  ON_CONST_FLOW_UPDATE = auto()
+  ON_TRIGGER_UPDATE = auto()
 
 
 class Simulator(threading.Thread):
@@ -29,76 +31,68 @@ class Simulator(threading.Thread):
   def __init__(self):
     threading.Thread.__init__(self, daemon=True)
 
-    self.connection_status = ConnectionStatus.DISCONNECTED
-    self.processing_status = ProcessingStatus.WAITING_FOR_CONNECTION
+    self.metadata = SimulatorMetadata()
+    self.connection_status: ConnectionStatus = ConnectionStatus.DISCONNECTED
+    self.processing_status: ProcessingStatus = ProcessingStatus.WAITING_FOR_CONNECTION
+    self.flow_configuration: FlowConfiguration = None
+    self.trigger_configuration: TriggerConfiguration = None
     self.address = None
     self.dev = None
-    self.on_success_callback = self.on_success
-    self.on_failure_callback = self.on_failure
     self.running = False
-    self.configuration = Configuration()
-    self.on_update_callback = self.update_callback
-    self.simulation_ready_callback = self.simulation_ready
-    self.simulation_not_ready_callback = lambda: None
-    self.on_flow_callback = self.on_new_data
-    self.on_simulation_start_cbs = []
     self.error_count = 0
+    self.cb_map = {
+      Callback.ON_CONNECTION_SUCCESS: [],
+      Callback.ON_CONNECTION_FAILURE: [],
+      Callback.ON_CONST_FLOW_UPDATE: [],
+      Callback.ON_MANUAL_FLOW_UPDATE: [],
+      Callback.ON_SIMULATION_START: [],
+      Callback.ON_SIMULATION_READY: [],
+      Callback.ON_FLOW_DATA: [],
+      Callback.ON_TRIGGER_UPDATE: [],
+    }
 
-  def on_new_data(self, ts, flow):
-    print(ts, flow)
-
-  def add_simulation_start_callback(self, callback):
-    self.on_simulation_start_cbs.append(callback)
-
-  def simulation_ready(self):
-    print("Simulation is ready")
-
-  def update_callback(self, configuration):
-    print(configuration)
+  def register(self, name: Callback, fn):
+    self.cb_map[name].append(fn)
 
   def check_simulation_ready(self):
-    ready = True
     if self.connection_status == ConnectionStatus.DISCONNECTED:
-      ready = False
-    if self.configuration.flow <= 10:
-      ready = False
-    if self.configuration.duration <= 1000:
-      ready = False
-    if ready == True:
-      self.simulation_ready_callback()
-    if ready == False:
-      self.simulation_not_ready_callback()
+      self.call_cb(Callback.ON_SIMULATION_READY, False)
+      return
 
-  def update_configuration(self, flow = None, duration = None, delay = None, simulator_version = None):
-    if flow is not None: self.configuration.flow = flow
-    if duration is not None: self.configuration.duration = duration 
-    if delay is not None: self.configuration.delay = delay 
-    if simulator_version is not None: self.configuration.simulator_version = simulator_version 
-    self.on_update_callback(self.configuration)
+    if self.flow_configuration == None:
+      self.call_cb(Callback.ON_SIMULATION_READY, False)
+      return
+
+    if type(self.flow_configuration) == ConstantFlow:
+      if self.flow_configuration.duration <= 1000:
+        self.call_cb(Callback.ON_SIMULATION_READY, False)
+        return
+
+    #if self.configuration.flow_type == FlowType.MANUAL:
+      # No logic here yet
+    self.call_cb(Callback.ON_SIMULATION_READY, True)
+
+  def call_cb(self, name: Callback, *data):
+    for cb in self.cb_map[name]: cb(data)
+
+  def update_configuration(self, config):
+    if type(config) == ConstantFlow or type(config) == ManualFlow: 
+      self.flow_configuration = config
+      self.call_cb(config.cb, self.flow_configuration)
+
+    if type(config) == TriggerConfiguration: 
+      self.trigger_configuration = config
+      self.call_cb(config.cb, self.trigger_configuration)
+
+    if type(config) == SimulatorMetadata: 
+      self.metadata = config
+      self.call_cb(config.cb, self.metadata)
+
     self.check_simulation_ready()
-    
-  def update_flow(self, flow: float):
-    self.configuration.flow = flow
-    self.on_update_callback(self.configuration)
+   
 
-  def update_delay(self, delay: int):
-    self.configuration.delay = delay
-    self.on_update_callback(self.configuration)
-
-  def update_length(self, length: int):
-    self.configuration.length = length
-    self.on_update_callback(self.configuration)
-
-  def on_success(self):
-    print("Connection Successful")
-
-  def on_failure(self, msgs):
-    print(f"Connection Failed: {msgs}")
-
-  def connect(self, address, on_failure, on_success):
+  def connect(self, address):
     self.error_count = 0
-    self.on_success_callback = on_success
-    self.on_failure_callback = on_failure
     self.address = address
     self.connection_status = ConnectionStatus.DISCONNECTED
     if self.running == False:
@@ -106,7 +100,7 @@ class Simulator(threading.Thread):
       self.start()
 
   def get_hardware_version(self, dev, errors):
-    msg = { 'type': 'connect', 'version': self.configuration.ui_version }
+    msg = { 'type': 'connect', 'version': self.metadata.ui_version }
     to_send = bytes(f'{json.dumps(msg)}\r\n', 'utf-8')
     print(f'send: {msg}')
     try:
@@ -132,18 +126,18 @@ class Simulator(threading.Thread):
       errors.append(TimeoutError(43, "Unable to get hardware version"))
       return 0
 
-    self.update_configuration(simulator_version = data['version'])
+    self.metadata.simulator_version = data['version']
+    self.update_configuration(self.metadata)
     return 1
 
   def start_simulation(self):
-    for cb in self.on_simulation_start_cbs:
-      cb()
+    self.call_cb(Callback.ON_SIMULATION_START)
 
     start_flow = { 
       'type': 'const', 
-      'delay': self.configuration.delay, 
-      'flow': self.configuration.flow, 
-      'length': self.configuration.duration
+      'delay': self.flow_configuration.delay, 
+      'flow': self.flow_configuration.flow, 
+      'length': self.flow_configuration.duration
     }
     to_send = bytes(f'{json.dumps(start_flow)}\r\n', 'utf-8')
     print(f'send: {to_send}')
@@ -161,15 +155,15 @@ class Simulator(threading.Thread):
 
       if dev is None:
         self.connection_status = ConnectionStatus.DISCONNECTED
-        self.on_failure_callback(errors)
+        self.call_cb(Callback.ON_CONNECTION_FAILURE, *errors)
       else:
         err = self.get_hardware_version(dev, errors)
         if err == 0:
-          self.on_failure_callback(errors)
+          self.call_cb(Callback.ON_CONNECTION_FAILURE, *errors)
           return -1
         self.connection_status = ConnectionStatus.CONNECTED
         self.processing_status = ProcessingStatus.WAITING_FOR_HEARTBEAT
-        self.on_success_callback()
+        self.call_cb(Callback.ON_CONNECTION_SUCCESS)
         self.dev = dev
         self.error_count = 0
         self.check_simulation_ready()
@@ -189,15 +183,18 @@ class Simulator(threading.Thread):
           print(data)
         except Exception as e:
           self.error_count += 1
-          self.on_failure_callback([e])
+          self.call_cb(Callback.ON_CONNECTION_FAILURE, e)
       elif self.processing_status == ProcessingStatus.WAITING_FOR_FLOW:
         line = self.dev.readline()
         msg = line.rstrip().decode('utf-8')
         if msg[0] == 'f':
-          [ts, flow] = msg[2:].split(',')
-          self.on_flow_callback(int(ts), float(flow))
+          [ts, flow, motor, driver] = msg[2:].split(',')
+          print(motor, driver)
+          self.call_cb(Callback.ON_FLOW_DATA, int(ts), float(flow), int(motor), int(driver))
         elif msg == 'alive':
           self.processing_status = ProcessingStatus.WAITING_FOR_HEARTBEAT
+        else:
+          print(msg)
 
       else:
         time.sleep(0.5)

@@ -1,4 +1,4 @@
-from bs_ui import __version__
+from simuflow import __version__
 
 
 def test_version():

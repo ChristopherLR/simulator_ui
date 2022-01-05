@@ -6,10 +6,10 @@ import asyncio
 import signal
 import functools
 
-from bs_ui.components.ControlPanel import ControlPanel
-from bs_ui.components.ImportPanel import ImportPanel
-from bs_ui.components.DisplayPanel import DisplayPanel
-from bs_ui.devices.simulator import Simulator
+from simuflow.components.ControlPanel import ControlPanel
+from simuflow.components.ImportPanel import ImportPanel
+from simuflow.components.DisplayPanel import DisplayPanel
+from simuflow.devices.simulator import Simulator
 
 # matplotlib.use('Qt6Agg')
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar

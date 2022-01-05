@@ -3,8 +3,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import QSize, Qt, QDir, QObject
 
-from bs_ui.components.Graph import Canvas 
-from bs_ui.devices.simulator import simulator
+from simuflow.components.Graph import Canvas 
+from simuflow.devices.simulator import simulator
 
 class DisplayPanel(QFrame):
   def __init__(self, parent):
@@ -24,19 +24,30 @@ class DisplayPanel(QFrame):
     
     self.layout = QVBoxLayout(self)
 
-    graph = Canvas(self)
+    graph = Canvas(self, 10000, 200)
     graph.setFixedHeight(250)
-    simulator.on_flow_callback = graph.update_data
+    simulator.on_flow_callback = self.flow_callback
     simulator.add_simulation_start_callback(graph.clear_data)
     self.graph = graph
 
+    power = Canvas(self, 10000, 255, 2)
+    power.setFixedHeight(250)
+    self.power = power
+    simulator.add_simulation_start_callback(power.clear_data)
+
+
     self.layout.addWidget(label)
+    self.layout.addWidget(power)
     self.layout.addWidget(graph)
 
     self.button = QPushButton("Export")
     self.button.clicked.connect(self.export)
 
     self.layout.addWidget(self.button)
+
+  def flow_callback(self, ts, flow, motor, driver):
+    self.power.update_data(ts, motor, driver)
+    self.graph.update_data(ts, flow)
 
   def export(self):
     (file_name, _) = QFileDialog.getSaveFileName(caption="Save CSV")

@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "bs-ui"
+name = "SimuFlow"
 version = "0.1.0"
 description = ""
 authors = ["Christopher Michael Sutton <christopher.sutton12@gmail.com>"]
 
 [tool.poetry.scripts]
-start = "bs_ui.main:start"
+start = "simuflow.__main__:start"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
@@ -20,3 +20,31 @@ black = {version = "^21.12b0", allow-prereleases = true}
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.briefcase]
+project_name = "SimuFlow"
+bundle = "com.majoradev.simuflow"
+version = "0.0.1"
+url = "https://simuflow.majoradev.com"
+license = "GNU General Public License v3 (GPLv3)"
+author = 'Christoper Sutton'
+author_email = "christopher.sutton1@students.mq.edu.au"
+
+[tool.briefcase.app.simuflow]
+formal_name = "SimuFlow"
+description = "Breathing Simulator UI"
+sources = ['simuflow/simuflow']
+requires = ['pyside6==6.2.1',
+            'pyserial==3.5',
+            'matplotlib==3.5.0']
+
+
+[tool.briefcase.app.simuflow.macOS]
+requires = []
+
+[tool.briefcase.app.simuflow.linux]
+requires = []
+system_requires = []
+
+[tool.briefcase.app.simuflow.windows]
+requires = []
