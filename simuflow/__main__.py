@@ -1,20 +1,8 @@
 import sys
-from PySide6.QtWidgets import *
+from PySide6.QtWidgets import QMainWindow, QHBoxLayout, QWidget, QApplication
 from PySide6.QtCore import QSize
-import matplotlib
-import asyncio
-import signal
-import functools
-
-from simuflow.components.ControlPanel import ControlPanel
-from simuflow.components.ImportPanel import ImportPanel
+from simuflow.components.ConfigPanel import ConfigPanel 
 from simuflow.components.DisplayPanel import DisplayPanel
-from simuflow.devices.simulator import Simulator
-
-# matplotlib.use('Qt6Agg')
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
-
 
 class MainWindow(QMainWindow):
   def __init__(self):
@@ -23,10 +11,8 @@ class MainWindow(QMainWindow):
     self.resize(QSize(800, 600))
 
 
-
     layout = QHBoxLayout()
-    layout.addWidget(ImportPanel(self))
-    layout.addWidget(ControlPanel(self))
+    layout.addWidget(ConfigPanel(self))
     layout.addWidget(DisplayPanel(self))
     layout.setContentsMargins(0,0,0,0)
     layout.setSpacing(0)
@@ -36,15 +22,7 @@ class MainWindow(QMainWindow):
 
     self.setCentralWidget(widget)
 
-def stopper(signame, loop):
-    print(f'Received {signame}, stopping...')
-    loop.stop()
-
 def start():
-  loop = asyncio.get_event_loop()
-  for signame in ('SIGINT', 'SIGTERM'):
-    loop.add_signal_handler(getattr(signal, signame), functools.partial(stopper, signame, loop))
-
   app = QApplication(sys.argv)
   window = MainWindow()
   window.show()

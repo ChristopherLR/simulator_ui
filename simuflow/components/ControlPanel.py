@@ -7,6 +7,7 @@ from PySide6.QtGui import QIntValidator
 import os
 
 from simuflow.devices.simulator import simulator, Callback
+from simuflow.configuration import *
 
 class ControlPanel(QFrame):
   def __init__(self, parent):
@@ -35,7 +36,7 @@ class ControlPanel(QFrame):
 
     camera_delay_input = CameraDelayInput(self)
 
-    hardware_setup = HarwareSetupPanel(self)
+    hardware_setup = HarwareSetup(self)
 
     configuration_view = ConfigurationView(self)
 
@@ -47,7 +48,8 @@ class ControlPanel(QFrame):
     self.layout.addWidget(start)
 
   def simulation_ready(self, ready):
-    self.start.setEnabled(ready)
+    val, = ready
+    self.start.setEnabled(val)
 
   def start_simulation(self):
     simulator.start_simulation()
@@ -77,9 +79,9 @@ class CameraDelayInput(QFrame):
     simulator.update_delay(input_delay)
   
 
-class HarwareSetupPanel(QFrame):
+class HarwareSetup(QFrame):
   def __init__(self, parent):
-    super(HarwareSetupPanel, self).__init__(parent)
+    super(HarwareSetup, self).__init__(parent)
     self.setObjectName('HardwareConfig')
     self.setStyleSheet("""
       #HardwareConfig { 
@@ -99,8 +101,8 @@ class HarwareSetupPanel(QFrame):
 
     self.input = QComboBox(self)
 
-    self.connection_status = QLabel(simulator.connection_status.name)
-    self.connection_status.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
+    self.processing_status = QLabel(simulator.processing_status.name)
+    self.processing_status.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
 
     self.connection_error = QLabel("")
     self.connection_error.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
@@ -115,7 +117,7 @@ class HarwareSetupPanel(QFrame):
     self.layout = QVBoxLayout(self)
     self.layout.addWidget(connection)
     self.layout.addWidget(connect)
-    self.layout.addWidget(self.connection_status)
+    self.layout.addWidget(self.processing_status)
     self.layout.addWidget(self.connection_error)
 
     simulator.register(Callback.ON_CONNECTION_FAILURE, self.on_connection_failure)
@@ -126,8 +128,8 @@ class HarwareSetupPanel(QFrame):
   def attempt_connection(self):
     simulator.connect(self.input.currentText())
 
-  def on_connection_success(self):
-    self.connection_status.setText("Connected")
+  def on_connection_success(self, data):
+    self.processing_status.setText("Connected")
     self.connection_error.setText("")
 
   def list_devices(self):
@@ -145,7 +147,7 @@ class HarwareSetupPanel(QFrame):
 
   def on_connection_failure(self, errors):
     print(errors)
-    self.connection_status.setText(f"Failed to connect")
+    self.processing_status.setText(f"Failed to connect")
     err_string = ""
     for error in errors:
       err_string += f"{error.args}\n"
@@ -164,31 +166,35 @@ class ConfigurationView(QFrame):
       }
     """)
 
-    config = simulator.configuration
-    simulator.on_update_callback = self.update_config
+    metadata = simulator.metadata
 
-    int_version = QLabel(f'Interface Version: {config.ui_version}')
-    sim_version = QLabel(f'Simulator Version: {config.simulator_version}')
-    delay = QLabel(f"Delay: {config.delay}")
-    flow = QLabel(f"Flow: {config.flow}")
-    duration = QLabel(f"Duration: {config.duration}")
+    simulator.register(Callback.ON_METADATA_UPDATE, self.update_config)
+
+    int_version = QLabel(f'Interface Version: {metadata.ui_version}')
+    sim_version = QLabel(f'Simulator Version: {metadata.simulator_version}')
+
+    # delay = QLabel(f"Delay: {config.delay}")
+    # flow = QLabel(f"Flow: {config.flow}")
+    # duration = QLabel(f"Duration: {config.duration}")
 
     self.int_version = int_version
     self.sim_version = sim_version
-    self.delay = delay
-    self.flow = flow
-    self.duration = duration
+    # self.delay = delay
+    # self.flow = flow
+    # self.duration = duration
 
     self.layout = QVBoxLayout(self)
     self.layout.addWidget(int_version)
     self.layout.addWidget(sim_version)
-    self.layout.addWidget(delay)
-    self.layout.addWidget(flow)
-    self.layout.addWidget(duration)
+    # self.layout.addWidget(delay)
+    # self.layout.addWidget(flow)
+    # self.layout.addWidget(duration)
 
-  def update_config(self, config):
+  def update_config(self, config: SimulatorMetadata):
+    config, = config
+    print(config)
     self.int_version.setText(f'Interface Version: {config.ui_version}')
     self.sim_version.setText(f'Simulator Version: {config.simulator_version}')
-    self.delay.setText(f"Delay: {config.delay}")
-    self.flow.setText(f"Flow: {config.flow}")
-    self.duration.setText(f"Duration: {config.duration}")
+    # self.delay.setText(f"Delay: {config.delay}")
+    # self.flow.setText(f"Flow: {config.flow}")
+    # self.duration.setText(f"Duration: {config.duration}")

@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import QSize, Qt, QDir, QObject
 
 from simuflow.components.Graph import Canvas 
-from simuflow.devices.simulator import simulator
+from simuflow.devices.simulator import simulator, Callback
 
 class DisplayPanel(QFrame):
   def __init__(self, parent):
@@ -25,19 +25,19 @@ class DisplayPanel(QFrame):
     self.layout = QVBoxLayout(self)
 
     graph = Canvas(self, 10000, 200)
-    graph.setFixedHeight(250)
-    simulator.on_flow_callback = self.flow_callback
-    simulator.add_simulation_start_callback(graph.clear_data)
+    # graph.setFixedHeight(250)
+    simulator.register(Callback.ON_FLOW_DATA, self.flow_callback)
+    simulator.register(Callback.ON_SIMULATION_START, graph.clear_data)
     self.graph = graph
 
-    power = Canvas(self, 10000, 255, 2)
-    power.setFixedHeight(250)
-    self.power = power
-    simulator.add_simulation_start_callback(power.clear_data)
+    # power = Canvas(self, 10000, 270, 2)
+    # power.setFixedHeight(250)
+    # self.power = power
+    # simulator.register(Callback.ON_SIMULATION_START, power.clear_data)
 
 
     self.layout.addWidget(label)
-    self.layout.addWidget(power)
+    # self.layout.addWidget(power)
     self.layout.addWidget(graph)
 
     self.button = QPushButton("Export")
@@ -45,8 +45,10 @@ class DisplayPanel(QFrame):
 
     self.layout.addWidget(self.button)
 
-  def flow_callback(self, ts, flow, motor, driver):
-    self.power.update_data(ts, motor, driver)
+  def flow_callback(self, data):
+    # ts, flow, motor, driver = data
+    ts, flow = data
+    # self.power.update_data(ts, motor, driver)
     self.graph.update_data(ts, flow)
 
   def export(self):

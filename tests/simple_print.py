@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-device = serial.Serial('/dev/tty.usbmodem111401', 115200)
+device = serial.Serial('/dev/tty.usbmodem100927401', 115200)
 
 fig, ax = plt.subplots()
 xdata, ydata = [], []
@@ -40,9 +40,13 @@ def listen():
 
 
 def exit_handler(signum, frame):
+  with open('test_data_2.json', 'w') as f:
+    print('saving data')
+    json.dump(json.dumps({ 'time': xdata, 'flow': ydata }), f)
   os.kill(os.getpid(), signal.SIGUSR1)
   if device.is_open:
     device.close()
+
   sys.exit(0)
 
 def run():
@@ -57,7 +61,7 @@ def run():
   device.write(to_send)
   time.sleep(3)
 
-  start_flow = { 'type': 'const', 'delay': 1500, 'flow': 25.0, 'length': 3000 }
+  start_flow = { 't': 'c', 'dl': 0, 'f': 100.0, 'd': 5000 }
   to_send = bytes(f'{json.dumps(start_flow)}\r\n', 'utf-8')
   print(f'send: {to_send}')
   device.write(to_send)

@@ -1,16 +1,13 @@
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from simuflow.devices.simulator import Callback
 
 @dataclass
 class SimulatorMetadata:
-  cb: Callback = Callback.ON_METADATA_UPDATE
   simulator_version: str = 'unknown'
-  ui_version: str = '0.1.0'
+  ui_version: str = '0.2.0'
 
 @dataclass
 class FlowConfiguration(ABC):
-  cb: Callback
 
   @abstractmethod
   def validate(self) -> bool:
@@ -18,7 +15,6 @@ class FlowConfiguration(ABC):
 
 @dataclass
 class ConstantFlow(FlowConfiguration):
-  cb: Callback = Callback.ON_CONST_FLOW_UPDATE
   flow: float = 0.0
   duration: int = 0
 
@@ -28,7 +24,6 @@ class ConstantFlow(FlowConfiguration):
 
 @dataclass
 class ManualFlow(FlowConfiguration):
-  cb: Callback = Callback.ON_MANUAL_FLOW_UPDATE
   motor_state: int = 0
   driver: int = 0
   fan: int = 0
@@ -38,5 +33,4 @@ class ManualFlow(FlowConfiguration):
 
 @dataclass
 class TriggerConfiguration():
-  cb: Callback = Callback.ON_TRIGGER_UPDATE
   delay: int = 0

@@ -9,7 +9,6 @@ start = "simuflow.__main__:start"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
-PySide6 = "^6.2.1"
 matplotlib = "^3.5.0"
 pyserial = "^3.5"
 

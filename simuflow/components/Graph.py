@@ -10,7 +10,6 @@ from PySide6.QtCore import Qt, QSize
 class Canvas(QFrame):
   def __init__(self, parent, xlim, ylim, plot_count = 1):
     super(Canvas, self).__init__(parent)
-
     dynamic_canvas = FigureCanvas(Figure(figsize=(5, 4)))
     self.layout = QVBoxLayout(self)
 
@@ -40,7 +39,6 @@ class Canvas(QFrame):
     for i in range(self.plot_count):
       self.ydata_map.append([])
 
-
   def update_data(self, x, *y):
     self.xdata.append(x)
     for idx, ydata in enumerate(y):
@@ -51,12 +49,12 @@ class Canvas(QFrame):
       self.lines[i].set_data(self.xdata, self.ydata_map[i])
     self.lines[0].figure.canvas.draw()
 
-  def clear_data(self):
+  def clear_data(self, res):
     self.xdata.clear()
     self.ydata_map.clear()
-    print(self.ydata_map)
+    # print(self.ydata_map)
     self.create_data_map()
-    print(self.ydata_map)
+    # print(self.ydata_map)
     for i in range(self.plot_count):
       self.lines[i].set_data(self.xdata, self.ydata_map[i])
       self.lines[i].figure.canvas.draw()

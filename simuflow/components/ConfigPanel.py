@@ -5,38 +5,79 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import QBuffer, Qt, QSize
 from PySide6.QtGui import QIntValidator, QDoubleValidator
 from simuflow.components.Graph import Graph, Canvas
-from simuflow.devices.simulator import simulator
+from simuflow.components.ControlPanel import CameraDelayInput, HarwareSetup, ConfigurationView 
+from simuflow.devices.simulator import simulator, Callback
+from simuflow.configuration import *
 
-class ImportPanel(QFrame):
+class ConfigPanel(QFrame):
   def __init__(self, parent):
-    super(ImportPanel, self).__init__(parent)
-    self.setObjectName('ImportPanel')
+    super(ConfigPanel, self).__init__(parent)
+    self.setObjectName('ConfigPanel')
     self.setStyleSheet("""
-      #ImportPanel { 
+      #ConfigPanel { 
         margin:0px; 
         border:1px solid black; 
-        min-width: 350px;
       }
     """)
 
     label = QLabel(self)
-    label.setText('Input')
+    label.setText('Configuration')
     label.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
+
+    flow_configuration = FlowConfiguration(self)
+
+    start = QPushButton("Start")
+    start.setEnabled(False)
+    start.clicked.connect(self.start_simulation)
+
+    simulator.register(Callback.ON_SIMULATION_READY, self.simulation_ready)
+    self.start = start
+    # start.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
+
+
+    camera_delay_input = CameraDelayInput(self)
+
+    hardware_setup = HarwareSetup(self)
+
+    configuration_view = ConfigurationView(self)
+
+    self.layout = QVBoxLayout(self)
+    self.layout.addWidget(label)
+    self.layout.addWidget(hardware_setup)
+    self.layout.addWidget(flow_configuration)
+    self.layout.addWidget(camera_delay_input)
+    self.layout.addWidget(configuration_view)
+    self.layout.addWidget(start)
     
+
+  
+  def simulation_ready(self, ready):
+    val, = ready
+    self.start.setEnabled(val)
+
+  def start_simulation(self):
+    simulator.start_simulation()
+
+class FlowConfiguration(QFrame):
+  def __init__(self, parent):
+    super(FlowConfiguration, self).__init__(parent)
+    self.setObjectName('FlowConfig')
+    self.setStyleSheet("""
+      #FlowConfig { 
+        margin:0px; 
+        min-width: 350px;
+      }
+    """)
+
     tabs = QTabWidget()
     tabs.setTabPosition(QTabWidget.North)
     tabs.setMovable(False)
     tabs.addTab(ConstantFlowPanel(self), "Constant Flow")
-    tabs.addTab(ManualFlowPanel(self), "Manual Flow")
+    # tabs.addTab(ManualFlowPanel(self), "Manual Flow")
     tabs.addTab(DynamicFlowPanel(self), "Dynamic Flow")
 
-    graph = Canvas(self, 10000, 200)
-    graph.setMaximumHeight(250)
-
     self.layout = QVBoxLayout(self)
-    self.layout.addWidget(label)
     self.layout.addWidget(tabs)
-    self.layout.addWidget(graph, Qt.AlignHCenter)
 
 class ConstantFlowPanel(QFrame):
   def __init__(self, parent):
@@ -71,20 +112,20 @@ class ConstantFlowPanel(QFrame):
     self.layout.addWidget(set_button)
 
   def set_input(self):
+    config = ConstantFlow()
     flow = self.flow_input.text()
     duration = self.duration_input.text()
-    input_flow = None
-    input_duration = None
 
-    if flow != '': input_flow = float(flow)
-    if duration != '': input_duration = int(duration)
+    if flow != '': config.flow = float(flow)
+    if duration != '': config.duration = int(duration)
 
-    simulator.update_configuration(flow=input_flow, duration=input_duration)
+    simulator.update_configuration(config)
 
 class ManualFlowPanel(QFrame):
   def __init__(self, parent):
     super(ManualFlowPanel, self).__init__(parent)
 
+    # Motor Toggle
     motor_box = QWidget(self)
     motor_label = QLabel("Fan")
     motor_on = QRadioButton("On")
@@ -119,27 +160,30 @@ class ManualFlowPanel(QFrame):
     dc.layout.addWidget(dc_label)
     dc.layout.addWidget(dc_input)
 
-    self.dc_input = fc_input 
+    self.dc_input = dc_input 
 
     set_button = QPushButton("Set")
     set_button.clicked.connect(self.set_input)
 
     self.layout = QVBoxLayout(self)
     self.layout.addWidget(motor_box)
-    self.layout.addWidget(duration_box)
+    self.layout.addWidget(fc)
+    self.layout.addWidget(dc)
     self.layout.addWidget(set_button)
 
 
   def set_input(self):
-    flow = self.flow_input.text()
-    duration = self.duration_input.text()
-    input_flow = None
-    input_duration = None
+    config = ManualFlow()
+    print(f'motor on: {self.motor_on.isChecked()}')
+    print(f'motor off: {self.motor_off.isChecked()}')
+    if self.motor_on.isChecked(): config.motor_state = 1
+    if self.motor_off.isChecked(): config.motor_state = 0
+    driver = self.dc_input.text()
+    if driver != '': config.driver = int(driver)
+    fan = self.fc_input.text()
+    if fan != '': config.fan = int(fan)
 
-    if flow != '': input_flow = float(flow)
-    if duration != '': input_duration = int(duration)
-
-    simulator.update_configuration(flow=input_flow, duration=input_duration)
+    simulator.update_configuration(config)
 
 
 
