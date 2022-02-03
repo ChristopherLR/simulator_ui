@@ -2,9 +2,11 @@ from enum import Enum, auto
 import threading
 import json
 import time
+from typing import Any, Optional
 import serial
 from simuflow.configuration import * 
 from simuflow.packet import ConfigurationPacket
+from copy import copy
 
 class ConnectionStatus(Enum):
   CONNECTED = auto()
@@ -20,6 +22,8 @@ class ProcessingStatus(Enum):
   ATTEMPTING_CONNECTION = auto()
   WAITING_FOR_HEARTBEAT = auto()
   WAITING_FOR_FLOW = auto()
+  WAITING_FOR_PROFILE_CONFIRMATION = auto()
+  SENDING_DYNAMIC_PROFILE = auto()
 
 class Callback(Enum):
   ON_METADATA_UPDATE = auto()
@@ -31,9 +35,7 @@ class Callback(Enum):
   ON_MANUAL_FLOW_UPDATE = auto()
   ON_CONST_FLOW_UPDATE = auto()
   ON_TRIGGER_UPDATE = auto()
-
-
-
+  ON_DYNAMIC_FLOW_UPDATE = auto()
 
 
 class Simulator(threading.Thread):
@@ -43,7 +45,7 @@ class Simulator(threading.Thread):
 
     self.metadata = SimulatorMetadata()
     self.processing_status: ProcessingStatus = ProcessingStatus.WAITING_FOR_CONNECTION
-    self.flow_configuration: FlowConfiguration = None
+    self.flow_configuration: Optional[FlowConfiguration] = None 
     self.trigger_configuration: TriggerConfiguration = TriggerConfiguration() 
     self.address = None
     self.dev = None
@@ -56,11 +58,16 @@ class Simulator(threading.Thread):
       Callback.ON_CONNECTION_FAILURE: [],
       Callback.ON_CONST_FLOW_UPDATE: [],
       Callback.ON_MANUAL_FLOW_UPDATE: [],
+      Callback.ON_DYNAMIC_FLOW_UPDATE: [self.send_dynamic_profile],
       Callback.ON_SIMULATION_START: [],
       Callback.ON_SIMULATION_READY: [],
       Callback.ON_FLOW_DATA: [],
       Callback.ON_TRIGGER_UPDATE: [],
     }
+
+  def cleanup(self):
+    if self.dev != None and self.dev.is_open:
+      self.dev.close()
 
   def register(self, name: Callback, fn):
     print(f'Register: {name}')
@@ -88,7 +95,7 @@ class Simulator(threading.Thread):
       # No logic here yet
     self.call_cb(Callback.ON_SIMULATION_READY, True)
 
-  def call_cb(self, name: Callback, *data: None):
+  def call_cb(self, name: Callback, *data: Optional[Any]):
     for cb in self.cb_map[name]: cb(data)
 
   def update_configuration(self, config):
@@ -100,6 +107,10 @@ class Simulator(threading.Thread):
     if type(config) == ManualFlow: 
       self.flow_configuration = config
       self.call_cb(Callback.ON_MANUAL_FLOW_UPDATE, self.flow_configuration)
+
+    if type(config) == DynamicFlow: 
+      self.flow_configuration = config
+      self.call_cb(Callback.ON_DYNAMIC_FLOW_UPDATE, self.flow_configuration)
 
     if type(config) == TriggerConfiguration: 
       self.trigger_configuration = config
@@ -123,6 +134,7 @@ class Simulator(threading.Thread):
     
     if self.thread_state == ThreadState.SLEEPING:
       self.thread_state = ThreadState.RUNNING
+
 
   def get_hardware_version(self, dev, errors):
     msg = { 't': 'connect', 'version': self.metadata.ui_version }
@@ -157,23 +169,22 @@ class Simulator(threading.Thread):
 
 
   def start_simulation(self):
+    assert(self.dev)
+    assert(self.flow_configuration)
+
     self.call_cb(Callback.ON_SIMULATION_START)
     packet = ConfigurationPacket()
 
-    if type(self.flow_configuration) == ConstantFlow:
-      packet.flow_type = ConstantFlow
-      packet.delay = self.trigger_configuration.delay
-      packet.flow = self.flow_configuration.flow
-      packet.duration = self.flow_configuration.duration
-    
-    if type(self.flow_configuration) == ManualFlow:
-      packet.flow_type = ManualFlow
-      packet.motor_state = self.flow_configuration.motor_state
-      packet.driver = self.flow_configuration.driver
-      packet.motor = self.flow_configuration.fan
+    if type(self.flow_configuration) == DynamicFlow:
+      msg = { 't': 'run' }
+      to_send = bytes(f'{json.dumps(msg)}\r\n', 'utf-8')
+      print(f'send: {to_send}')
 
-    to_send = packet.toBytes()
-    print(f'send: {to_send}')
+    else:
+      packet.flow_configuration = self.flow_configuration
+      packet.delay = self.trigger_configuration.delay
+      to_send = packet.toBytes()
+      print(f'send: {to_send}')
 
     error = False
     try:
@@ -209,6 +220,60 @@ class Simulator(threading.Thread):
         self.dev = dev
         self.error_count = 0
         self.check_simulation_ready()
+
+  def confirm_dynamic_profile(self):
+    assert(self.dev)
+    assert(type(self.flow_configuration) == DynamicFlow)
+
+    lin_x = self.flow_configuration.time
+    lin_y = self.flow_configuration.flow
+
+    for x, y in zip(lin_x, lin_y):
+      packet = ConfigurationPacket()
+      packet.flow_configuration = DynamicFlowInterval(x, y)
+      to_send = packet.toBytes()
+      print(f'send: {to_send}')
+      self.dev.write(to_send)
+      time.sleep(0.005)
+
+    packet = ConfigurationPacket()
+    packet.flow_configuration = DynamicFlowInterval(max(lin_x) + 20, 0) 
+    packet.fin = 1
+    to_send = packet.toBytes()
+    print(f'send: {to_send}')
+    self.dev.write(to_send)
+  
+    self.processing_status = ProcessingStatus.WAITING_FOR_PROFILE_CONFIRMATION
+
+  def send_dynamic_profile(self, *data: Optional[Any]):
+    assert(self.dev)
+    assert(type(self.flow_configuration) == DynamicFlow)
+
+    packet = ConfigurationPacket()
+    lin_x = self.flow_configuration.time
+    lin_y = self.flow_configuration.flow
+    flow_config = DynamicFlow(lin_x, lin_y, len(lin_x), max(lin_x) - min(lin_x), 20)
+    packet.flow_configuration = flow_config
+    to_send = packet.toBytes()
+    print(f'send: {to_send}')
+    self.dev.write(to_send)
+
+    for x, y in zip(lin_x, lin_y):
+      packet = ConfigurationPacket()
+      packet.flow_configuration = DynamicFlowInterval(x, y)
+      to_send = packet.toBytes()
+      print(f'send: {to_send}')
+      self.dev.write(to_send)
+      time.sleep(0.005)
+
+    packet = ConfigurationPacket()
+    packet.flow_configuration = DynamicFlowInterval(max(lin_x) + 20, 0) 
+    packet.fin = 1
+    to_send = packet.toBytes()
+    print(f'send: {to_send}')
+    self.dev.write(to_send)
+  
+    self.processing_status = ProcessingStatus.WAITING_FOR_PROFILE_CONFIRMATION
   
   def process_message(self, msg):
     data = msg.rstrip().decode('utf-8')
@@ -248,13 +313,46 @@ class Simulator(threading.Thread):
         if len(msg) == 0: continue
         if msg[0] == 'f':
           # [ts, flow, motor, driver] = msg[2:].split(',')
-          [ts, flow] = msg[2:].split(',')
+          [ts, flow, driver] = msg[2:].split(',')
+          print(driver)
           # print(motor, driver)
           self.call_cb(Callback.ON_FLOW_DATA, int(ts), float(flow))
+        if msg[0] == 'i' and msg != 'interval' and type(self.flow_configuration) == DynamicFlow:
+          self.processing_status = ProcessingStatus.WAITING_FOR_PROFILE_CONFIRMATION
         elif msg == 'alive':
           self.processing_status = ProcessingStatus.WAITING_FOR_HEARTBEAT
         else:
           print(f'recv: {msg}')
+      elif self.processing_status == ProcessingStatus.SENDING_DYNAMIC_PROFILE:
+        self.send_dynamic_profile()
+
+      elif self.processing_status == ProcessingStatus.WAITING_FOR_PROFILE_CONFIRMATION:
+        line = self.dev.readline()
+        msg = line.rstrip().decode('utf-8')
+        if msg[0] == 'i' and msg != 'interval':
+          [pre_time, pre_flow] = msg.split(',')
+          print(pre_time[1:], pre_flow[2:])
+          parsed_time = int(pre_time[1:])
+          parsed_flow = float(pre_flow[2:])
+          t_idx = None
+          t_flow = None
+          try:
+            t_idx = self.flow_configuration.time.index(parsed_time)
+            t_flow = self.flow_configuration.flow[t_idx]
+          except Exception as e:
+            print(f'Dynamic profile error: {e}')
+          if t_idx == None or t_flow == None:
+            to_send = bytes(f'nak\r\n', 'utf-8')
+            print(f'send: {to_send}')
+            self.dev.write(to_send)
+          elif round(t_flow, 2) == parsed_flow:
+            to_send = bytes(f'ack\r\n', 'utf-8')
+            print(f'send: {to_send}')
+            self.dev.write(to_send)
+          else:
+            to_send = bytes(f'nak\r\n', 'utf-8')
+            print(f'send: {to_send}')
+            self.dev.write(to_send)
 
       else:
         self.thread_state = ThreadState.SLEEPING 

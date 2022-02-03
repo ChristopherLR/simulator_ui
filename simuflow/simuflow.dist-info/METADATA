@@ -1,0 +1,10 @@
+Metadata-Version: 2.1
+Briefcase-Version: 0.3.5
+Name: simuflow
+Formal-Name: SimuFlow
+App-ID: com.majoradev.simuflow.simuflow
+Version: 0.0.1
+Home-page: https://simuflow.majoradev.com
+Author: Christoper Sutton
+Author-email: christopher.sutton1@students.mq.edu.au
+Summary: Breathing Simulator UI
