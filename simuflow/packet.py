@@ -23,25 +23,25 @@ class ConfigurationPacket:
 
     @flow_configuration.setter
     def flow_configuration(self, v: FlowConfiguration):
-        if type(v) == ManualFlow:
+        if isinstance(v, ManualFlow):
             self._flow_type = "manual"
             self.motor_state = v.motor_state
             self.driver = v.driver
             self.motor = v.fan
-        elif type(v) == ConstantFlow:
+        elif isinstance(v, ConstantFlow):
             self._flow_type = "const"
             self.flow = v.flow
             self.duration = v.duration
-        elif type(v) == DynamicFlow:
+        elif isinstance(v, DynamicFlow):
             self._flow_type = "dynamic"
             self.duration = int(v.duration)
             self.count = int(v.count)
             self.interval = int(v.interval)
-        elif type(v) == DynamicFlowInterval:
+        elif isinstance(v, DynamicFlowInterval):
             self._flow_type = "interval"
             self.interval = int(v.interval)
             self.flow = round(float(v.flow), 2)
-        elif type(v) == DynamicProfileConfirmation:
+        elif isinstance(v, DynamicProfileConfirmation):
             self._flow_type = "confirm"
         else:
             raise ValueError(f"Unknown value for flow type: {v}")

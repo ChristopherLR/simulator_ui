@@ -7,7 +7,7 @@ import numpy as np
 from typing import List, Tuple
 
 
-def read_inhalation_profile(fname, interval) -> Tuple[List[int], List[float]]:
+def read_inhalation_profile(fname: str, interval: int) -> Tuple[List[int], List[float]]:
   xdata = []
   ydata = []
 

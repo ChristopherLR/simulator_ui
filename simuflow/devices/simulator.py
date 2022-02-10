@@ -7,6 +7,7 @@ import serial
 from simuflow.configuration import * 
 from simuflow.packet import ConfigurationPacket
 from copy import copy
+from math import isclose
 
 class ConnectionStatus(Enum):
   CONNECTED = auto()
@@ -64,6 +65,7 @@ class Simulator(threading.Thread):
       Callback.ON_FLOW_DATA: [],
       Callback.ON_TRIGGER_UPDATE: [],
     }
+    self.acknowledged = {}
 
   def cleanup(self):
     if self.dev != None and self.dev.is_open:
@@ -175,7 +177,10 @@ class Simulator(threading.Thread):
     self.call_cb(Callback.ON_SIMULATION_START)
     packet = ConfigurationPacket()
 
-    if type(self.flow_configuration) == DynamicFlow:
+    if isinstance(self.flow_configuration, DynamicFlow):
+      for idx, k in enumerate(self.acknowledged):
+        if self.acknowledged[k]['ack'] == False:
+          print(k, self.acknowledged[k])
       msg = { 't': 'run' }
       to_send = bytes(f'{json.dumps(msg)}\r\n', 'utf-8')
       print(f'send: {to_send}')
@@ -223,7 +228,7 @@ class Simulator(threading.Thread):
 
   def confirm_dynamic_profile(self):
     assert(self.dev)
-    assert(type(self.flow_configuration) == DynamicFlow)
+    assert(isinstance(self.flow_configuration, DynamicFlow))
 
     lin_x = self.flow_configuration.time
     lin_y = self.flow_configuration.flow
@@ -247,18 +252,20 @@ class Simulator(threading.Thread):
 
   def send_dynamic_profile(self, *data: Optional[Any]):
     assert(self.dev)
-    assert(type(self.flow_configuration) == DynamicFlow)
+    assert(isinstance(self.flow_configuration, DynamicFlow))
 
     packet = ConfigurationPacket()
     lin_x = self.flow_configuration.time
     lin_y = self.flow_configuration.flow
-    flow_config = DynamicFlow(lin_x, lin_y, len(lin_x), max(lin_x) - min(lin_x), 20)
+    interval = self.flow_configuration.interval
+    flow_config = DynamicFlow(lin_x, lin_y, len(lin_x), max(lin_x) - min(lin_x), interval)
     packet.flow_configuration = flow_config
     to_send = packet.toBytes()
     print(f'send: {to_send}')
     self.dev.write(to_send)
 
     for x, y in zip(lin_x, lin_y):
+      self.acknowledged[x] = { 'ack': False, 'flow': y }
       packet = ConfigurationPacket()
       packet.flow_configuration = DynamicFlowInterval(x, y)
       to_send = packet.toBytes()
@@ -267,7 +274,7 @@ class Simulator(threading.Thread):
       time.sleep(0.005)
 
     packet = ConfigurationPacket()
-    packet.flow_configuration = DynamicFlowInterval(max(lin_x) + 20, 0) 
+    packet.flow_configuration = DynamicFlowInterval(max(lin_x) + interval, 0) 
     packet.fin = 1
     to_send = packet.toBytes()
     print(f'send: {to_send}')
@@ -301,6 +308,7 @@ class Simulator(threading.Thread):
         err = self.try_connection()
         if err == -1: self.error_count += 1
       elif self.processing_status == ProcessingStatus.WAITING_FOR_HEARTBEAT:
+        assert(self.dev)
         try:
           data = self.dev.readline()
           self.process_message(data)
@@ -308,13 +316,14 @@ class Simulator(threading.Thread):
           self.error_count += 1
           self.call_cb(Callback.ON_CONNECTION_FAILURE, e)
       elif self.processing_status == ProcessingStatus.WAITING_FOR_FLOW:
+        assert(self.dev)
         line = self.dev.readline()
         msg = line.rstrip().decode('utf-8')
         if len(msg) == 0: continue
         if msg[0] == 'f':
           # [ts, flow, motor, driver] = msg[2:].split(',')
           [ts, flow, driver] = msg[2:].split(',')
-          print(driver)
+          # print(driver)
           # print(motor, driver)
           self.call_cb(Callback.ON_FLOW_DATA, int(ts), float(flow))
         if msg[0] == 'i' and msg != 'interval' and type(self.flow_configuration) == DynamicFlow:
@@ -325,8 +334,9 @@ class Simulator(threading.Thread):
           print(f'recv: {msg}')
       elif self.processing_status == ProcessingStatus.SENDING_DYNAMIC_PROFILE:
         self.send_dynamic_profile()
-
       elif self.processing_status == ProcessingStatus.WAITING_FOR_PROFILE_CONFIRMATION:
+        assert(self.dev)
+        assert(isinstance(self.flow_configuration, DynamicFlow))
         line = self.dev.readline()
         msg = line.rstrip().decode('utf-8')
         if msg[0] == 'i' and msg != 'interval':
@@ -343,15 +353,20 @@ class Simulator(threading.Thread):
             print(f'Dynamic profile error: {e}')
           if t_idx == None or t_flow == None:
             to_send = bytes(f'nak\r\n', 'utf-8')
+            self.acknowledged[parsed_time]['ack'] = False 
+            self.acknowledged[parsed_time]['actual'] = parsed_flow 
             print(f'send: {to_send}')
             self.dev.write(to_send)
-          elif round(t_flow, 2) == parsed_flow:
+          elif isclose(t_flow, parsed_flow, abs_tol=0.1):
             to_send = bytes(f'ack\r\n', 'utf-8')
+            self.acknowledged[parsed_time]['ack'] = True
             print(f'send: {to_send}')
             self.dev.write(to_send)
           else:
             to_send = bytes(f'nak\r\n', 'utf-8')
             print(f'send: {to_send}')
+            self.acknowledged[parsed_time]['ack'] = False 
+            self.acknowledged[parsed_time]['actual'] = parsed_flow 
             self.dev.write(to_send)
 
       else:

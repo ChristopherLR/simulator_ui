@@ -17,7 +17,8 @@ from simuflow.packet import ConfigurationPacket
 from simuflow.configuration import *
 
 device = serial.Serial('/dev/tty.usbmodem114401', 115200)
-lin_x, lin_y = read_inhalation_profile('inhalation_profiles/40_6.csv', 20)
+interval = 5
+lin_x, lin_y = read_inhalation_profile('inhalation_profiles/60_4.csv', interval)
 
 fig, ax = plt.subplots()
 xdata, ydata = [], []
@@ -86,7 +87,7 @@ def run():
   time.sleep(1)
 
   packet = ConfigurationPacket()
-  flow_config = DynamicFlow(lin_x, lin_y, len(lin_x), max(lin_x) - min(lin_x), 20)
+  flow_config = DynamicFlow(lin_x, lin_y, len(lin_x), max(lin_x) - min(lin_x), interval)
   packet.flow_configuration = flow_config
   to_send = packet.toBytes()
   print(f'send: {to_send}')
@@ -96,14 +97,20 @@ def run():
     packet = ConfigurationPacket()
     packet.flow_configuration = DynamicFlowInterval(x, y)
     to_send = packet.toBytes()
-    print(f'send: {to_send}')
+    # print(f'send: {to_send}')
     device.write(to_send)
     time.sleep(0.003)
 
   packet = ConfigurationPacket()
-  packet.flow_configuration = DynamicFlowInterval(max(lin_x) + 20, 0) 
+  packet.flow_configuration = DynamicFlowInterval(max(lin_x) + interval, 0) 
   packet.fin = 1
   to_send = packet.toBytes()
+  print(f'send: {to_send}')
+  device.write(to_send)
+  time.sleep(1)
+
+  msg = { 't': 'confirm' }
+  to_send = bytes(f'{json.dumps(msg)}\r\n', 'utf-8')
   print(f'send: {to_send}')
   device.write(to_send)
   time.sleep(1)

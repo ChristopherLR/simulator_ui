@@ -100,6 +100,7 @@ class HarwareSetup(QFrame):
     connect.clicked.connect(self.attempt_connection)
 
     self.input = QComboBox(self)
+    self.list_devices()
 
     self.processing_status = QLabel(simulator.processing_status.name)
     self.processing_status.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
