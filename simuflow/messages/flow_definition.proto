@@ -2,12 +2,15 @@ syntax = "proto3";
 
 message InterfaceMessage {
   enum MessageType {
-    kVersionInfo          = 0;
-    kConstantFlow         = 1;
-    kManualFlow           = 2;
-    kDynamicFlow          = 3;
-    kDynamicFlowInterval  = 4;
-    kInformationRequest   = 5;
+    kVersionInfo            = 0;
+    kConstantFlow           = 1;
+    kManualFlow             = 2;
+    kDynamicFlow            = 3;
+    kDynamicFlowInterval    = 4;
+    kInformationRequest     = 5;
+    kRunDynamicFlowRequest  = 6;
+    kAck                    = 7;
+    kNack                   = 8;
   }
   MessageType message_type = 1;
   oneof message {
@@ -24,11 +27,15 @@ message SimulatorMessage {
   enum MessageType {
     kVersionInfo  = 0;
     kFlow         = 1;
+    kError        = 2;
+    kHeartbeat    = 3;
+    kFlowInterval = 4;
   }
   MessageType message_type = 1;
   oneof message {
     VersionInfo version_info  = 2;
     FlowInfo flow_info        = 3;
+    uint32 error_message      = 4;
   }
 }
 
@@ -37,26 +44,30 @@ message FlowInfo {
   uint32 timestamp = 2; 
 }
 
-
 message ConstantFlow {
   float flow = 1;
   uint32 duration = 2;
+  uint32 trigger1_delay = 3;
+  uint32 trigger2_delay = 4;
 };
 
 message ManualFlow {
   float flow = 1;
   uint32 driver = 2;
+  uint32 motor_state = 3;
   enum FanDirection {
     kClockwise = 0;
     kCounterClockwise = 1;
   }
-  FanDirection fan_direction = 3;
+  FanDirection fan_direction = 4;
 }
 
 message DynamicFlow {
   uint32 duration = 1;
   uint32 count = 2;
   uint32 interval = 3;
+  uint32 trigger1_delay = 4;
+  uint32 trigger2_delay = 5;
 }
 
 message DynamicFlowInterval {

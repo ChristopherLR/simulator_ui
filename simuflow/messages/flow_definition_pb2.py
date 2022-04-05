@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15\x66low_definition.proto\"\xe0\x03\n\x10InterfaceMessage\x12\x33\n\x0cmessage_type\x18\x01 \x01(\x0e\x32\x1d.InterfaceMessage.MessageType\x12$\n\x0cversion_info\x18\x02 \x01(\x0b\x32\x0c.VersionInfoH\x00\x12&\n\rconstant_flow\x18\x03 \x01(\x0b\x32\r.ConstantFlowH\x00\x12$\n\x0c\x64ynamic_flow\x18\x04 \x01(\x0b\x32\x0c.DynamicFlowH\x00\x12\"\n\x0bmanual_flow\x18\x05 \x01(\x0b\x32\x0b.ManualFlowH\x00\x12\x35\n\x15\x64ynamic_flow_interval\x18\x06 \x01(\x0b\x32\x14.DynamicFlowIntervalH\x00\x12\x32\n\x13information_request\x18\x07 \x01(\x0b\x32\x13.InformationRequestH\x00\"\x88\x01\n\x0bMessageType\x12\x10\n\x0ckVersionInfo\x10\x00\x12\x11\n\rkConstantFlow\x10\x01\x12\x0f\n\x0bkManualFlow\x10\x02\x12\x10\n\x0ckDynamicFlow\x10\x03\x12\x18\n\x14kDynamicFlowInterval\x10\x04\x12\x17\n\x13kInformationRequest\x10\x05\x42\t\n\x07message\"\xc4\x01\n\x10SimulatorMessage\x12\x33\n\x0cmessage_type\x18\x01 \x01(\x0e\x32\x1d.SimulatorMessage.MessageType\x12$\n\x0cversion_info\x18\x02 \x01(\x0b\x32\x0c.VersionInfoH\x00\x12\x1e\n\tflow_info\x18\x03 \x01(\x0b\x32\t.FlowInfoH\x00\"*\n\x0bMessageType\x12\x10\n\x0ckVersionInfo\x10\x00\x12\t\n\x05kFlow\x10\x01\x42\t\n\x07message\"+\n\x08\x46lowInfo\x12\x0c\n\x04\x66low\x18\x01 \x01(\x02\x12\x11\n\ttimestamp\x18\x02 \x01(\r\".\n\x0c\x43onstantFlow\x12\x0c\n\x04\x66low\x18\x01 \x01(\x02\x12\x10\n\x08\x64uration\x18\x02 \x01(\r\"\x92\x01\n\nManualFlow\x12\x0c\n\x04\x66low\x18\x01 \x01(\x02\x12\x0e\n\x06\x64river\x18\x02 \x01(\r\x12/\n\rfan_direction\x18\x03 \x01(\x0e\x32\x18.ManualFlow.FanDirection\"5\n\x0c\x46\x61nDirection\x12\x0e\n\nkClockwise\x10\x00\x12\x15\n\x11kCounterClockwise\x10\x01\"@\n\x0b\x44ynamicFlow\x12\x10\n\x08\x64uration\x18\x01 \x01(\r\x12\r\n\x05\x63ount\x18\x02 \x01(\r\x12\x10\n\x08interval\x18\x03 \x01(\r\"D\n\x13\x44ynamicFlowInterval\x12\x10\n\x08interval\x18\x01 \x01(\r\x12\x0c\n\x04\x66low\x18\x02 \x01(\x02\x12\r\n\x05\x66inal\x18\x03 \x01(\r\"c\n\x12InformationRequest\x12/\n\tdata_type\x18\x01 \x01(\x0e\x32\x1c.InformationRequest.DataType\"\x1c\n\x08\x44\x61taType\x12\x10\n\x0ckDynamicFlow\x10\x00\":\n\x0bVersionInfo\x12\r\n\x05major\x18\x01 \x01(\r\x12\r\n\x05minor\x18\x02 \x01(\r\x12\r\n\x05patch\x18\x03 \x01(\rb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15\x66low_definition.proto\"\x91\x04\n\x10InterfaceMessage\x12\x33\n\x0cmessage_type\x18\x01 \x01(\x0e\x32\x1d.InterfaceMessage.MessageType\x12$\n\x0cversion_info\x18\x02 \x01(\x0b\x32\x0c.VersionInfoH\x00\x12&\n\rconstant_flow\x18\x03 \x01(\x0b\x32\r.ConstantFlowH\x00\x12$\n\x0c\x64ynamic_flow\x18\x04 \x01(\x0b\x32\x0c.DynamicFlowH\x00\x12\"\n\x0bmanual_flow\x18\x05 \x01(\x0b\x32\x0b.ManualFlowH\x00\x12\x35\n\x15\x64ynamic_flow_interval\x18\x06 \x01(\x0b\x32\x14.DynamicFlowIntervalH\x00\x12\x32\n\x13information_request\x18\x07 \x01(\x0b\x32\x13.InformationRequestH\x00\"\xb9\x01\n\x0bMessageType\x12\x10\n\x0ckVersionInfo\x10\x00\x12\x11\n\rkConstantFlow\x10\x01\x12\x0f\n\x0bkManualFlow\x10\x02\x12\x10\n\x0ckDynamicFlow\x10\x03\x12\x18\n\x14kDynamicFlowInterval\x10\x04\x12\x17\n\x13kInformationRequest\x10\x05\x12\x1a\n\x16kRunDynamicFlowRequest\x10\x06\x12\x08\n\x04kAck\x10\x07\x12\t\n\x05kNack\x10\x08\x42\t\n\x07message\"\x8c\x02\n\x10SimulatorMessage\x12\x33\n\x0cmessage_type\x18\x01 \x01(\x0e\x32\x1d.SimulatorMessage.MessageType\x12$\n\x0cversion_info\x18\x02 \x01(\x0b\x32\x0c.VersionInfoH\x00\x12\x1e\n\tflow_info\x18\x03 \x01(\x0b\x32\t.FlowInfoH\x00\x12\x17\n\rerror_message\x18\x04 \x01(\rH\x00\"Y\n\x0bMessageType\x12\x10\n\x0ckVersionInfo\x10\x00\x12\t\n\x05kFlow\x10\x01\x12\n\n\x06kError\x10\x02\x12\x0e\n\nkHeartbeat\x10\x03\x12\x11\n\rkFlowInterval\x10\x04\x42\t\n\x07message\"+\n\x08\x46lowInfo\x12\x0c\n\x04\x66low\x18\x01 \x01(\x02\x12\x11\n\ttimestamp\x18\x02 \x01(\r\"^\n\x0c\x43onstantFlow\x12\x0c\n\x04\x66low\x18\x01 \x01(\x02\x12\x10\n\x08\x64uration\x18\x02 \x01(\r\x12\x16\n\x0etrigger1_delay\x18\x03 \x01(\r\x12\x16\n\x0etrigger2_delay\x18\x04 \x01(\r\"\xa7\x01\n\nManualFlow\x12\x0c\n\x04\x66low\x18\x01 \x01(\x02\x12\x0e\n\x06\x64river\x18\x02 \x01(\r\x12\x13\n\x0bmotor_state\x18\x03 \x01(\r\x12/\n\rfan_direction\x18\x04 \x01(\x0e\x32\x18.ManualFlow.FanDirection\"5\n\x0c\x46\x61nDirection\x12\x0e\n\nkClockwise\x10\x00\x12\x15\n\x11kCounterClockwise\x10\x01\"p\n\x0b\x44ynamicFlow\x12\x10\n\x08\x64uration\x18\x01 \x01(\r\x12\r\n\x05\x63ount\x18\x02 \x01(\r\x12\x10\n\x08interval\x18\x03 \x01(\r\x12\x16\n\x0etrigger1_delay\x18\x04 \x01(\r\x12\x16\n\x0etrigger2_delay\x18\x05 \x01(\r\"D\n\x13\x44ynamicFlowInterval\x12\x10\n\x08interval\x18\x01 \x01(\r\x12\x0c\n\x04\x66low\x18\x02 \x01(\x02\x12\r\n\x05\x66inal\x18\x03 \x01(\r\"c\n\x12InformationRequest\x12/\n\tdata_type\x18\x01 \x01(\x0e\x32\x1c.InformationRequest.DataType\"\x1c\n\x08\x44\x61taType\x12\x10\n\x0ckDynamicFlow\x10\x00\":\n\x0bVersionInfo\x12\r\n\x05major\x18\x01 \x01(\r\x12\r\n\x05minor\x18\x02 \x01(\r\x12\r\n\x05patch\x18\x03 \x01(\rb\x06proto3')
 
 
 
@@ -98,29 +98,29 @@ if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
   _INTERFACEMESSAGE._serialized_start=26
-  _INTERFACEMESSAGE._serialized_end=506
+  _INTERFACEMESSAGE._serialized_end=555
   _INTERFACEMESSAGE_MESSAGETYPE._serialized_start=359
-  _INTERFACEMESSAGE_MESSAGETYPE._serialized_end=495
-  _SIMULATORMESSAGE._serialized_start=509
-  _SIMULATORMESSAGE._serialized_end=705
-  _SIMULATORMESSAGE_MESSAGETYPE._serialized_start=652
-  _SIMULATORMESSAGE_MESSAGETYPE._serialized_end=694
-  _FLOWINFO._serialized_start=707
-  _FLOWINFO._serialized_end=750
-  _CONSTANTFLOW._serialized_start=752
-  _CONSTANTFLOW._serialized_end=798
-  _MANUALFLOW._serialized_start=801
-  _MANUALFLOW._serialized_end=947
-  _MANUALFLOW_FANDIRECTION._serialized_start=894
-  _MANUALFLOW_FANDIRECTION._serialized_end=947
-  _DYNAMICFLOW._serialized_start=949
-  _DYNAMICFLOW._serialized_end=1013
-  _DYNAMICFLOWINTERVAL._serialized_start=1015
-  _DYNAMICFLOWINTERVAL._serialized_end=1083
-  _INFORMATIONREQUEST._serialized_start=1085
-  _INFORMATIONREQUEST._serialized_end=1184
-  _INFORMATIONREQUEST_DATATYPE._serialized_start=1156
-  _INFORMATIONREQUEST_DATATYPE._serialized_end=1184
-  _VERSIONINFO._serialized_start=1186
-  _VERSIONINFO._serialized_end=1244
+  _INTERFACEMESSAGE_MESSAGETYPE._serialized_end=544
+  _SIMULATORMESSAGE._serialized_start=558
+  _SIMULATORMESSAGE._serialized_end=826
+  _SIMULATORMESSAGE_MESSAGETYPE._serialized_start=726
+  _SIMULATORMESSAGE_MESSAGETYPE._serialized_end=815
+  _FLOWINFO._serialized_start=828
+  _FLOWINFO._serialized_end=871
+  _CONSTANTFLOW._serialized_start=873
+  _CONSTANTFLOW._serialized_end=967
+  _MANUALFLOW._serialized_start=970
+  _MANUALFLOW._serialized_end=1137
+  _MANUALFLOW_FANDIRECTION._serialized_start=1084
+  _MANUALFLOW_FANDIRECTION._serialized_end=1137
+  _DYNAMICFLOW._serialized_start=1139
+  _DYNAMICFLOW._serialized_end=1251
+  _DYNAMICFLOWINTERVAL._serialized_start=1253
+  _DYNAMICFLOWINTERVAL._serialized_end=1321
+  _INFORMATIONREQUEST._serialized_start=1323
+  _INFORMATIONREQUEST._serialized_end=1422
+  _INFORMATIONREQUEST_DATATYPE._serialized_start=1394
+  _INFORMATIONREQUEST_DATATYPE._serialized_end=1422
+  _VERSIONINFO._serialized_start=1424
+  _VERSIONINFO._serialized_end=1482
 # @@protoc_insertion_point(module_scope)

@@ -24,6 +24,9 @@ class InterfaceMessage(google.protobuf.message.Message):
         kDynamicFlow: InterfaceMessage._MessageType.ValueType  # 3
         kDynamicFlowInterval: InterfaceMessage._MessageType.ValueType  # 4
         kInformationRequest: InterfaceMessage._MessageType.ValueType  # 5
+        kRunDynamicFlowRequest: InterfaceMessage._MessageType.ValueType  # 6
+        kAck: InterfaceMessage._MessageType.ValueType  # 7
+        kNack: InterfaceMessage._MessageType.ValueType  # 8
     class MessageType(_MessageType, metaclass=_MessageTypeEnumTypeWrapper):
         pass
 
@@ -33,6 +36,9 @@ class InterfaceMessage(google.protobuf.message.Message):
     kDynamicFlow: InterfaceMessage.MessageType.ValueType  # 3
     kDynamicFlowInterval: InterfaceMessage.MessageType.ValueType  # 4
     kInformationRequest: InterfaceMessage.MessageType.ValueType  # 5
+    kRunDynamicFlowRequest: InterfaceMessage.MessageType.ValueType  # 6
+    kAck: InterfaceMessage.MessageType.ValueType  # 7
+    kNack: InterfaceMessage.MessageType.ValueType  # 8
 
     MESSAGE_TYPE_FIELD_NUMBER: builtins.int
     VERSION_INFO_FIELD_NUMBER: builtins.int
@@ -78,29 +84,38 @@ class SimulatorMessage(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         kVersionInfo: SimulatorMessage._MessageType.ValueType  # 0
         kFlow: SimulatorMessage._MessageType.ValueType  # 1
+        kError: SimulatorMessage._MessageType.ValueType  # 2
+        kHeartbeat: SimulatorMessage._MessageType.ValueType  # 3
+        kFlowInterval: SimulatorMessage._MessageType.ValueType  # 4
     class MessageType(_MessageType, metaclass=_MessageTypeEnumTypeWrapper):
         pass
 
     kVersionInfo: SimulatorMessage.MessageType.ValueType  # 0
     kFlow: SimulatorMessage.MessageType.ValueType  # 1
+    kError: SimulatorMessage.MessageType.ValueType  # 2
+    kHeartbeat: SimulatorMessage.MessageType.ValueType  # 3
+    kFlowInterval: SimulatorMessage.MessageType.ValueType  # 4
 
     MESSAGE_TYPE_FIELD_NUMBER: builtins.int
     VERSION_INFO_FIELD_NUMBER: builtins.int
     FLOW_INFO_FIELD_NUMBER: builtins.int
+    ERROR_MESSAGE_FIELD_NUMBER: builtins.int
     message_type: global___SimulatorMessage.MessageType.ValueType
     @property
     def version_info(self) -> global___VersionInfo: ...
     @property
     def flow_info(self) -> global___FlowInfo: ...
+    error_message: builtins.int
     def __init__(self,
         *,
         message_type: global___SimulatorMessage.MessageType.ValueType = ...,
         version_info: typing.Optional[global___VersionInfo] = ...,
         flow_info: typing.Optional[global___FlowInfo] = ...,
+        error_message: builtins.int = ...,
         ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["flow_info",b"flow_info","message",b"message","version_info",b"version_info"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["flow_info",b"flow_info","message",b"message","message_type",b"message_type","version_info",b"version_info"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing_extensions.Literal["message",b"message"]) -> typing.Optional[typing_extensions.Literal["version_info","flow_info"]]: ...
+    def HasField(self, field_name: typing_extensions.Literal["error_message",b"error_message","flow_info",b"flow_info","message",b"message","version_info",b"version_info"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["error_message",b"error_message","flow_info",b"flow_info","message",b"message","message_type",b"message_type","version_info",b"version_info"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing_extensions.Literal["message",b"message"]) -> typing.Optional[typing_extensions.Literal["version_info","flow_info","error_message"]]: ...
 global___SimulatorMessage = SimulatorMessage
 
 class FlowInfo(google.protobuf.message.Message):
@@ -121,14 +136,20 @@ class ConstantFlow(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
     FLOW_FIELD_NUMBER: builtins.int
     DURATION_FIELD_NUMBER: builtins.int
+    TRIGGER1_DELAY_FIELD_NUMBER: builtins.int
+    TRIGGER2_DELAY_FIELD_NUMBER: builtins.int
     flow: builtins.float
     duration: builtins.int
+    trigger1_delay: builtins.int
+    trigger2_delay: builtins.int
     def __init__(self,
         *,
         flow: builtins.float = ...,
         duration: builtins.int = ...,
+        trigger1_delay: builtins.int = ...,
+        trigger2_delay: builtins.int = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["duration",b"duration","flow",b"flow"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["duration",b"duration","flow",b"flow","trigger1_delay",b"trigger1_delay","trigger2_delay",b"trigger2_delay"]) -> None: ...
 global___ConstantFlow = ConstantFlow
 
 class ManualFlow(google.protobuf.message.Message):
@@ -148,17 +169,20 @@ class ManualFlow(google.protobuf.message.Message):
 
     FLOW_FIELD_NUMBER: builtins.int
     DRIVER_FIELD_NUMBER: builtins.int
+    MOTOR_STATE_FIELD_NUMBER: builtins.int
     FAN_DIRECTION_FIELD_NUMBER: builtins.int
     flow: builtins.float
     driver: builtins.int
+    motor_state: builtins.int
     fan_direction: global___ManualFlow.FanDirection.ValueType
     def __init__(self,
         *,
         flow: builtins.float = ...,
         driver: builtins.int = ...,
+        motor_state: builtins.int = ...,
         fan_direction: global___ManualFlow.FanDirection.ValueType = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["driver",b"driver","fan_direction",b"fan_direction","flow",b"flow"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["driver",b"driver","fan_direction",b"fan_direction","flow",b"flow","motor_state",b"motor_state"]) -> None: ...
 global___ManualFlow = ManualFlow
 
 class DynamicFlow(google.protobuf.message.Message):
@@ -166,16 +190,22 @@ class DynamicFlow(google.protobuf.message.Message):
     DURATION_FIELD_NUMBER: builtins.int
     COUNT_FIELD_NUMBER: builtins.int
     INTERVAL_FIELD_NUMBER: builtins.int
+    TRIGGER1_DELAY_FIELD_NUMBER: builtins.int
+    TRIGGER2_DELAY_FIELD_NUMBER: builtins.int
     duration: builtins.int
     count: builtins.int
     interval: builtins.int
+    trigger1_delay: builtins.int
+    trigger2_delay: builtins.int
     def __init__(self,
         *,
         duration: builtins.int = ...,
         count: builtins.int = ...,
         interval: builtins.int = ...,
+        trigger1_delay: builtins.int = ...,
+        trigger2_delay: builtins.int = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["count",b"count","duration",b"duration","interval",b"interval"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["count",b"count","duration",b"duration","interval",b"interval","trigger1_delay",b"trigger1_delay","trigger2_delay",b"trigger2_delay"]) -> None: ...
 global___DynamicFlow = DynamicFlow
 
 class DynamicFlowInterval(google.protobuf.message.Message):

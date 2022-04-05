@@ -1,4 +1,4 @@
-from simuflow.messages.flow_definition_pb2 import ConstantFlow, InformationRequest, ManualFlow, InterfaceMessage 
+from simuflow.messages.flow_definition_pb2 import ConstantFlow, InformationRequest, ManualFlow, InterfaceMessage
 import serial
 import os
 import signal
@@ -100,7 +100,7 @@ def run():
   x = threading.Thread(target=listen, daemon=True)
   x.start()
 
-  delay = 0.000
+  delay = 0.00001
 
   send_version_info(0, 4, 0)
   time.sleep(delay)
@@ -116,10 +116,6 @@ def run():
   time.sleep(delay)
 
   input()
-
-  # rec_message = InterfaceMessage()
-  # rec_message.ParseFromString(proto_string)
-  # print(rec_message)
 
 
 
