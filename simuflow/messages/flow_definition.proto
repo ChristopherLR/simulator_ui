@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+message InterfaceMessage {
+  enum MessageType {
+    kVersionInfo          = 0;
+    kConstantFlow         = 1;
+    kManualFlow           = 2;
+    kDynamicFlow          = 3;
+    kDynamicFlowInterval  = 4;
+    kInformationRequest   = 5;
+  }
+  MessageType message_type = 1;
+  oneof message {
+    VersionInfo version_info                  = 2;
+    ConstantFlow constant_flow                = 3;
+    DynamicFlow dynamic_flow                  = 4;
+    ManualFlow manual_flow                    = 5;
+    DynamicFlowInterval dynamic_flow_interval = 6;
+    InformationRequest information_request    = 7;
+  }
+}
+
+message SimulatorMessage {
+  enum MessageType {
+    kVersionInfo  = 0;
+    kFlow         = 1;
+  }
+  MessageType message_type = 1;
+  oneof message {
+    VersionInfo version_info  = 2;
+    FlowInfo flow_info        = 3;
+  }
+}
+
+message FlowInfo {
+  float flow = 1;
+  uint32 timestamp = 2; 
+}
+
+
+message ConstantFlow {
+  float flow = 1;
+  uint32 duration = 2;
+};
+
+message ManualFlow {
+  float flow = 1;
+  uint32 driver = 2;
+  enum FanDirection {
+    kClockwise = 0;
+    kCounterClockwise = 1;
+  }
+  FanDirection fan_direction = 3;
+}
+
+message DynamicFlow {
+  uint32 duration = 1;
+  uint32 count = 2;
+  uint32 interval = 3;
+}
+
+message DynamicFlowInterval {
+  uint32 interval = 1;
+  float flow = 2;
+  uint32 final = 3;
+}
+
+message InformationRequest {
+  enum DataType {
+    kDynamicFlow = 0;
+  }
+  DataType data_type = 1;
+}
+
+message VersionInfo {
+  uint32 major = 1;
+  uint32 minor = 2;
+  uint32 patch = 3;
+}

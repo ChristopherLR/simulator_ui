@@ -13,6 +13,8 @@ matplotlib = "^3.5.0"
 pyserial = "^3.5"
 PySide6 = "^6.2.2"
 scipy = "^1.7.3"
+protobuf = "^3.20.0"
+nanopb = "^0.4.5"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
@@ -37,7 +39,8 @@ description = "Breathing Simulator UI"
 sources = ['simuflow/simuflow']
 requires = ['pyside6==6.2.2',
             'pyserial==3.5',
-            'matplotlib==3.5.0']
+            'matplotlib==3.5.0',
+						'scipy==1.7.3' ]
 
 
 [tool.briefcase.app.simuflow.macOS]
